@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="bilgem-nlp-toolkit" default="jar" basedir=".">
+
+    <property file="build.properties"/>
+
+    <property name="src.dir" location="src"/>
+    <property name="build.dir" location="build"/>
+
+    <!--   dagitim kutuphaneleri (eger varsa) -->
+    <path id="classpath.runtime">
+        <fileset dir="lib/runtime"/>
+    </path>
+
+    <!--  compile to build dir -->
+    <target name="compile">
+        <delete dir="${build.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <javac srcdir="${src.dir}"
+               destdir="${build.dir}"
+               classpathref="classpath.runtime"
+               debug="true"
+               source="1.7"
+               target="1.7"
+               debuglevel="vars,lines,source">
+        </javac>
+        <copy todir="${build.dir}">
+            <fileset dir="${src.dir}">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="jar" depends="compile">
+        <jar basedir="${build.dir}" file="${name}-${version}.jar">
+        </jar>
+    </target>
+
+    <!-- standalone jar -->
+    <target name="standalone-jar" depends="jar">
+        <taskdef name="jarjar"
+                 classname="com.tonicsystems.jarjar.JarJarTask"
+                 classpath="lib/dev/jarjar-1.0.jar"/>
+        <jarjar jarfile="${name}-${version}-all.jar">
+            <zipfileset src="${name}-${version}.jar"/>
+            <zipfileset src="lib/runtime/antlr-runtime-4.0.jar"/>
+            <zipfileset src="lib/runtime/bsh.jar"/>
+            <zipfileset src="lib/runtime/berkeleylm.jar"/>
+            <zipfileset src="lib/runtime/grmm-deps.jar"/>
+            <zipfileset src="lib/runtime/guava-14.0.jar"/>
+            <zipfileset src="lib/runtime/jcaki-1.0.0.jar"/>
+            <zipfileset src="lib/runtime/jgrapht-0.6.0.jar"/>
+            <zipfileset src="lib/runtime/jwnl-1.3.jar"/>
+            <zipfileset src="lib/runtime/lang-id-0.1.jar"/>
+            <zipfileset src="lib/runtime/mallet.jar"/>
+            <zipfileset src="lib/runtime/mtj-0.9.9.jar"/>
+            <zipfileset src="lib/runtime/openjgraph.jar"/>
+            <zipfileset src="lib/runtime/smooth-core-1.0.0a.jar"/>
+            <zipfileset src="lib/runtime/smooth-lm-1.0.0a.jar"/>
+            <zipfileset src="lib/runtime/trove-2.0.2.jar"/>
+            <zipfileset src="lib/runtime/zemberek-3.0.0-alpha2.jar"/>
+            <zipfileset src="lib/runtime/zemberek-shared-1.0.0-SNAPSHOT.jar"/>
+        </jarjar>
+    </target>
+
+</project>
