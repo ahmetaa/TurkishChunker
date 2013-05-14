@@ -1,5 +1,6 @@
 package trnlp.chunking;
 
+import org.antlr.v4.runtime.Token;
 import trnlp.apps.ContentPreprocessor;
 import trnlp.apps.TurkishMorphology;
 import trnlp.apps.TurkishSentenceTokenizer;
@@ -22,8 +23,9 @@ import java.util.*;
 public class ChunkerFeatureExtractor {
 
     ContentPreprocessor preprocessor = new ContentPreprocessor();
-    TurkishSentenceTokenizer tokenizer = new TurkishSentenceTokenizer();
+    static TurkishSentenceTokenizer tokenizer = new TurkishSentenceTokenizer();
     TurkishMorphology morphology;
+    boolean eliminatePunctuations = false;
 
     String delimiter = " ";
 
@@ -31,9 +33,10 @@ public class ChunkerFeatureExtractor {
         this.morphology = new TurkishMorphology();
     }
 
-    public ChunkerFeatureExtractor(String delimiter) throws IOException {
+    public ChunkerFeatureExtractor(String delimiter, boolean eliminatePunctuations) throws IOException {
         this.morphology = new TurkishMorphology();
         this.delimiter = delimiter;
+        this.eliminatePunctuations = eliminatePunctuations;
     }
 
     public void generateFromAnnotationFile(File in, File out) throws IOException {
@@ -48,6 +51,7 @@ public class ChunkerFeatureExtractor {
         Set<String> ignoredChunkSentences = new LinkedHashSet<>();
         for (String line : lines) {
             line = line.replaceAll("[*]", "");
+
             if (accepted.contains(line)) {
                 System.out.println("Duplicated line: " + line);
             } else {
@@ -55,7 +59,7 @@ public class ChunkerFeatureExtractor {
                 // split from chunks
                 boolean chunkIgnored = false;
                 for (String s : Splitter.on("/").trimResults().omitEmptyStrings().split(line)) {
-                    ChunkData chunkData = ChunkData.generate(s);
+                    ChunkData chunkData = ChunkData.generate(s, eliminatePunctuations);
                     if (chunkData == null) {
                         System.out.println("Bad chunk detected:[" + s + "]  in sentence:" + line);
                         chunkIgnored = true;
@@ -160,8 +164,20 @@ public class ChunkerFeatureExtractor {
 
         }
         pw.close();
-
     }
+
+    static Set<String> puncts = Sets.newHashSet(".", ",", "?", ":", ";", "!");
+
+    public static String eliminatePunctuations(String s) {
+        List<String> tokens = tokenizer.tokenizeAsStrings(s);
+        List<String> result = new ArrayList<>();
+        for (String token : tokens) {
+            if (!puncts.contains(token))
+                result.add(token);
+        }
+        return Joiner.on(" ").join(result);
+    }
+
 
     class WordFeature {
         String token;
@@ -225,7 +241,7 @@ public class ChunkerFeatureExtractor {
             this.tag = tag;
         }
 
-        static ChunkData generate(String chunk) {
+        static ChunkData generate(String chunk, boolean eliminatePunctuations) {
             chunk = chunk.trim();
             String wordsBlock = null;
             ChunkType tag = null;
@@ -233,6 +249,8 @@ public class ChunkerFeatureExtractor {
             for (String annotation : annotationMap.keySet()) {
                 if (chunk.endsWith(annotation)) {
                     wordsBlock = Strings.subStringUntilLast(chunk, annotation);
+                    if (eliminatePunctuations)
+                        wordsBlock = eliminatePunctuations(wordsBlock);
                     tag = annotationMap.get(annotation);
                     break;
                 }
@@ -255,16 +273,13 @@ public class ChunkerFeatureExtractor {
         String word;
         String lemma;
         String pos;
+        String secPos;
         String lastIg;
-        String metaLetters;
         boolean firstLetterCapital = false;
         boolean containsQuote = false;
-        boolean allCapital = false;
-        boolean containsDot = false;
-        String last4;
+        String last3;
         boolean plural;
         String nounCase;
-
 
         public static final TurkishChunkFeatures START = new TurkishChunkFeatures("<s>");
         public static final TurkishChunkFeatures END = new TurkishChunkFeatures("<s>");
@@ -273,6 +288,9 @@ public class ChunkerFeatureExtractor {
             this.word = word;
             this.lemma = parse.dictionaryItem.lemma;
             this.pos = parse.getPos().shortForm;
+            this.secPos = parse.dictionaryItem.secondaryPos.shortForm;
+            if (this.secPos.equals("Unk"))
+                this.secPos = "_";
             if (parse.dictionaryItem.secondaryPos == SecondaryPos.ProperNoun)
                 pos = "Prop";
             if (parse.getSuffixDataList().size() == 0) {
@@ -290,49 +308,32 @@ public class ChunkerFeatureExtractor {
                     this.lastIg = "_";
             }
             this.firstLetterCapital = Character.isUpperCase(word.charAt(0));
-            this.containsDot = word.length() > 1 && word.contains(".");
-
-            this.allCapital = isAllUpper(word);
             this.containsQuote = word.contains("'");
-            this.metaLetters = metaLetters(word);
+            if (word.length() > 3)
+                last3 = word.substring(word.length() - 3);
+            else
+                last3 = word;
+
+            plural = lastIg.contains("A3pl");
+            nounCase = "_";
+            for (String aCase : cases) {
+                if (lastIg.contains(aCase)) {
+                    nounCase = aCase;
+                    break;
+                }
+            }
         }
 
-        public String metaLetters(String input) {
-            StringBuilder sb = new StringBuilder();
-            char last = 'x';
-            for (int i = 0; i < input.length(); i++) {
-                char ch = input.charAt(i);
-                if (Character.isUpperCase(ch))
-                    ch = 'C';
-                else if (Character.isLowerCase(ch))
-                    ch = 'c';
-                else if (Character.isDigit(ch))
-                    ch = 'D';
-                else
-                    ch = 'P';
-                if (ch == last)
-                    continue;
-                sb.append(ch);
-                last = ch;
-            }
-            return sb.toString();
-        }
+        static Set<String> cases = Sets.newHashSet("Dat", "Abl", "Acc", "Inst", "Loc", "Gen", "Nom");
 
         public TurkishChunkFeatures(String word) {
             this.word = word;
             this.lemma = word;
             this.lastIg = "NO_IG";
-            this.metaLetters = "_";
             this.pos = "_";
-        }
-
-        private boolean isAllUpper(String input) {
-            for (char c : Strings.subStringUntilFirst(input, "'").toCharArray()) {
-                if (!Character.isUpperCase(c)) {
-                    return false;
-                }
-            }
-            return true;
+            this.secPos = "_";
+            this.last3 = "_";
+            this.nounCase = "_";
         }
 
         public String featureString(String delimiter) {
@@ -350,12 +351,12 @@ public class ChunkerFeatureExtractor {
                     word,
                     lemma,
                     pos,
+                    secPos,
                     lastIg,
-                    metaLetters,
+                    nounCase,
+                    last3,
                     String.valueOf(firstLetterCapital),
-                    String.valueOf(containsQuote),
-                    String.valueOf(allCapital),
-                    String.valueOf(containsDot)
+                    String.valueOf(containsQuote)
             );
         }
 
@@ -363,14 +364,39 @@ public class ChunkerFeatureExtractor {
             List<String> features = new ArrayList<>();
             features.addAll(getFeatureList());
             features.addAll(Arrays.asList(
-                    "-1" + prev.word, "-1" + prev.metaLetters, "-1" + prev.lemma, "-1" + prev.lastIg, "-1" + prev.pos, "-1" + prev.firstLetterCapital, "-1" + prev.containsQuote,
-                    "+1" + next.word, "+1" + next.metaLetters, "+1" + next.lemma, "+1" + next.lastIg, "+1" + next.pos, "+1" + next.firstLetterCapital, "+1" + next.containsQuote,
+                    "-1" + prev.word, "-1" + prev.plural, "-1" + prev.nounCase, "-1" + prev.last3, "-1" + prev.lastIg, "-1" + prev.pos,
+                    "+1" + next.word, "+1" + next.plural, "+1" + next.nounCase, "-1" + prev.last3, "+1" + next.lastIg, "+1" + next.pos,
                     pos + "|" + next.pos,
                     prev.pos + "|" + pos,
-                    prev.metaLetters + "|" + metaLetters,
-                    metaLetters + "|" + next.metaLetters,
                     prev.lastIg + "|" + lastIg,
                     lastIg + "|" + next.lastIg,
+                    prev.last3 + "|" + last3,
+                    last3 + "|" + next.last3,
+                    prev.plural + "|" + plural,
+                    plural + "|" + next.plural,
+                    prev.nounCase + "|" + nounCase,
+                    nounCase + "|" + next.nounCase,
+                    prev == START ? "true" : "false"
+            ));
+            return features;
+        }
+
+/*        public List<String> getConnectecFeatureList(TurkishChunkFeatures prev, TurkishChunkFeatures next) {
+            List<String> features = new ArrayList<>();
+            features.addAll(getFeatureList());
+            features.addAll(Arrays.asList(
+                    "-1" + prev.word, "-1" + prev.plural, "-1" + prev.nounCase, "-1" + prev.last3, "-1" + prev.lemma, "-1" + prev.lastIg, "-1" + prev.pos, "-1" + prev.firstLetterCapital, "-1" + prev.containsQuote,
+                    "+1" + next.word, "+1" + next.plural, "+1" + next.nounCase, "-1" + prev.last3, "+1" + next.lemma, "+1" + next.lastIg, "+1" + next.pos, "+1" + next.firstLetterCapital, "+1" + next.containsQuote,
+                    pos + "|" + next.pos,
+                    prev.pos + "|" + pos,
+                    prev.lastIg + "|" + lastIg,
+                    lastIg + "|" + next.lastIg,
+                    prev.last3 + "|" + last3,
+                    last3 + "|" + next.last3,
+                    prev.plural + "|" + plural,
+                    plural + "|" + next.plural,
+                    prev.nounCase + "|" + nounCase,
+                    nounCase + "|" + next.nounCase,
                     prev == START ? "true" : "false",
                     firstLetterCapital + "|" + next.firstLetterCapital,
                     prev.firstLetterCapital + "|" + firstLetterCapital,
@@ -378,11 +404,11 @@ public class ChunkerFeatureExtractor {
                     prev.containsQuote + "|" + containsQuote
             ));
             return features;
-        }
+        }*/
     }
 
     public static void main(String[] args) throws IOException {
-        ChunkerFeatureExtractor chunkerFeatureExtractor = new ChunkerFeatureExtractor();
+        ChunkerFeatureExtractor chunkerFeatureExtractor = new ChunkerFeatureExtractor(" ", true);
         chunkerFeatureExtractor.generateFromAnnotationFile(
                 new File("data/chunker-annotated.txt"),
                 new File("data/chunk-features.txt")
