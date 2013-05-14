@@ -14,11 +14,11 @@ import java.util.List;
  */
 public class Chunk {
     int index;
-    ChunkerTrainer.ChunkType type;
+    ChunkerFeatureExtractor.ChunkType type;
     List<MorphParse> parses;
     List<String> words;
 
-    public Chunk(int index, ChunkerTrainer.ChunkType type, List<MorphParse> parses, List<String> words) {
+    public Chunk(int index, ChunkerFeatureExtractor.ChunkType type, List<MorphParse> parses, List<String> words) {
         this.index = index;
         this.type = type;
         this.parses = parses;

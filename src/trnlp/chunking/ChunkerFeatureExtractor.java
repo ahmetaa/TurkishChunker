@@ -19,20 +19,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-public class ChunkerTrainer {
+public class ChunkerFeatureExtractor {
 
-    Set<String> crfTags = Sets.newHashSet("OB", "OI", "TB", "TI", "YB", "YI");
     ContentPreprocessor preprocessor = new ContentPreprocessor();
     TurkishSentenceTokenizer tokenizer = new TurkishSentenceTokenizer();
     TurkishMorphology morphology;
 
     String delimiter = " ";
 
-    public ChunkerTrainer() throws IOException {
+    public ChunkerFeatureExtractor() throws IOException {
         this.morphology = new TurkishMorphology();
     }
 
-    public ChunkerTrainer(String delimiter) throws IOException {
+    public ChunkerFeatureExtractor(String delimiter) throws IOException {
         this.morphology = new TurkishMorphology();
         this.delimiter = delimiter;
     }
@@ -235,7 +234,6 @@ public class ChunkerTrainer {
         }
     }
 
-
     public static class TurkishChunkFeatures {
         String word;
         String lemma;
@@ -246,6 +244,10 @@ public class ChunkerTrainer {
         boolean containsQuote = false;
         boolean allCapital = false;
         boolean containsDot = false;
+        String last4;
+        boolean plural;
+        String nounCase;
+
 
         public static final TurkishChunkFeatures START = new TurkishChunkFeatures("<s>");
         public static final TurkishChunkFeatures END = new TurkishChunkFeatures("<s>");
@@ -363,8 +365,8 @@ public class ChunkerTrainer {
     }
 
     public static void main(String[] args) throws IOException {
-        ChunkerTrainer chunkerTrainer = new ChunkerTrainer();
-        chunkerTrainer.generateFromAnnotationFile(
+        ChunkerFeatureExtractor chunkerFeatureExtractor = new ChunkerFeatureExtractor();
+        chunkerFeatureExtractor.generateFromAnnotationFile(
                 new File("data/chunker-annotated.txt"),
                 new File("data/chunk-features.txt")
         );

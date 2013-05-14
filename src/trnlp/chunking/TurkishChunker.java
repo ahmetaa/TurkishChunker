@@ -83,7 +83,7 @@ public class TurkishChunker {
             }
             if (!tag.equals(previousTag)) {
                 if (morphParses.size() > 0) {
-                    parses.add(new Chunk(index, ChunkerTrainer.ChunkType.getByAbbrv(previousTag), morphParses,
+                    parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
                             Lists.newArrayList(words.subList(index, index+morphParses.size()))));
                     morphParses = new ArrayList<>(2);
                     index = i;
@@ -92,7 +92,7 @@ public class TurkishChunker {
             } else {
                 if (isBegin) {
                     if (morphParses.size() > 0) {
-                        parses.add(new Chunk(index, ChunkerTrainer.ChunkType.getByAbbrv(previousTag), morphParses,
+                        parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
                                 Lists.newArrayList(words.subList(index, index+morphParses.size()))));
                         morphParses = new ArrayList<>(2);
                     }
@@ -102,21 +102,21 @@ public class TurkishChunker {
             }
             previousTag = tag;
         } if(!morphParses.isEmpty()) {
-            parses.add(new Chunk(index, ChunkerTrainer.ChunkType.getByAbbrv(tag), morphParses,
+            parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(tag), morphParses,
                     Lists.newArrayList(words.subList(index, index+morphParses.size()))));
         }
         return parses;
     }
 
     private ArraySequence getCrfResult(SentenceMorphParse input) {
-        List<ChunkerTrainer.TurkishChunkFeatures> featuresList = new ArrayList<>();
-        featuresList.add(ChunkerTrainer.TurkishChunkFeatures.START);
+        List<ChunkerFeatureExtractor.TurkishChunkFeatures> featuresList = new ArrayList<>();
+        featuresList.add(ChunkerFeatureExtractor.TurkishChunkFeatures.START);
 
         for (SentenceMorphParse.Entry entry : input) {
             MorphParse first = entry.parses.get(0);
-            featuresList.add(new ChunkerTrainer.TurkishChunkFeatures(entry.input, first));
+            featuresList.add(new ChunkerFeatureExtractor.TurkishChunkFeatures(entry.input, first));
         }
-        featuresList.add(ChunkerTrainer.TurkishChunkFeatures.END);
+        featuresList.add(ChunkerFeatureExtractor.TurkishChunkFeatures.END);
 
         String[][] featureMatrix = new String[featuresList.size() - 2][];
         for (int i = 1; i < featuresList.size() - 1; i++) {
