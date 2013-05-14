@@ -45,6 +45,7 @@ public class ChunkerFeatureExtractor {
         // eliminate duplicated sentences and give statistics
         Set<List<ChunkData>> accepted = new LinkedHashSet<>();
         Set<String> declined = new LinkedHashSet<>();
+        Set<String> ignoredChunkSentences = new LinkedHashSet<>();
         for (String line : lines) {
             line = line.replaceAll("[*]", "");
             if (accepted.contains(line)) {
@@ -52,24 +53,40 @@ public class ChunkerFeatureExtractor {
             } else {
                 List<ChunkData> chunks = new ArrayList<>();
                 // split from chunks
+                boolean chunkIgnored = false;
                 for (String s : Splitter.on("/").trimResults().omitEmptyStrings().split(line)) {
                     ChunkData chunkData = ChunkData.generate(s);
                     if (chunkData == null) {
-                        System.out.println("Bad chunk detected:[" + s + "]                in sentence:" + line);
-                        chunks.clear();
-                        break;
+                        System.out.println("Bad chunk detected:[" + s + "]  in sentence:" + line);
+                        chunkIgnored = true;
                     } else
                         chunks.add(chunkData);
                 }
                 if (chunks.isEmpty()) {
                     declined.add(line);
-                } else
+                } else {
                     accepted.add(chunks);
+                    if (chunkIgnored)
+                        ignoredChunkSentences.add(line);
+                }
+
             }
+        }
+
+
+        System.out.println("Accepted with ignored chunks");
+        for (String ignoredChunkSentence : ignoredChunkSentences) {
+            System.out.println(ignoredChunkSentence);
+        }
+        System.out.println();
+        System.out.println("Declined sentences: ");
+        for (String s : declined) {
+            System.out.println(s);
         }
 
         System.out.println("Total Sentence count:" + lines.size());
         System.out.println("Accepted Line count:" + accepted.size());
+        System.out.println("Accepted with loss of chunk count:" + ignoredChunkSentences.size());
         System.out.println("Declined Line count:" + declined.size());
 
         for (List<ChunkData> chunkDataList : accepted) {
