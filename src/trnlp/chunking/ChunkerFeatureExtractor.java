@@ -1,6 +1,7 @@
 package trnlp.chunking;
 
 import org.antlr.v4.runtime.Token;
+import org.jcaki.SimpleTextWriter;
 import trnlp.apps.ContentPreprocessor;
 import trnlp.apps.TurkishMorphology;
 import trnlp.apps.TurkishSentenceTokenizer;
@@ -113,48 +114,10 @@ public class ChunkerFeatureExtractor {
                 chunks.addAll(words);
             }
             String allSentence = Joiner.on(" ").join(chunks);
-            SentenceMorphParse parse = null;
-            try {
-                parse = morphology.parseAndDisambiguateSentence(allSentence);
-            } catch (Exception e) {
-                System.out.println("Error during morphological parse of sentence:" + allSentence + " with exception:" + e.getMessage());
-            }
 
-            if (parse == null) {
-                continue;
-            }
+            List<String> featureLines = getFeatureLines(wordFeatures, allSentence);
 
-            for (int i = 0; i < wordFeatures.size(); i++) {
-                WordFeature wordFeature = wordFeatures.get(i);
-                try {
-                    wordFeature.features = new TurkishChunkFeatures(wordFeature.token, parse.getEntry(i).parses.get(0));
-                } catch (Exception e) {
-                    System.out.println("Error during feature extraction of sentence:" + allSentence + " with exception:" + e.getMessage());
-                }
-            }
-
-            List<String> featureLines = new ArrayList<>();
-            TurkishChunkFeatures prev;
-            TurkishChunkFeatures next;
-
-            for (int j = 0; j < wordFeatures.size(); j++) {
-                if (j > 0) {
-                    prev = wordFeatures.get(j - 1).features;
-                } else {
-                    prev = new WordFeature("X", TurkishChunkFeatures.START).features;
-                }
-                if (j < wordFeatures.size() - 1) {
-                    next = wordFeatures.get(j + 1).features;
-                } else {
-                    next = new WordFeature("X", TurkishChunkFeatures.END).features;
-                }
-                TurkishChunkFeatures current = wordFeatures.get(j).features;
-                List<String> features = current.getConnectecFeatureList(prev, next);
-                //List<String> features = current.getFeatureList();
-                String label = wordFeatures.get(j).label;
-                features.add(label);
-                featureLines.add(Joiner.on(" ").join(features));
-            }
+            if (featureLines == null) return;
             for (String fl : featureLines) {
                 // stw.writeLine(labeledWord.word + " " + labeledWord.label);
                 pw.print(fl);
@@ -164,6 +127,52 @@ public class ChunkerFeatureExtractor {
 
         }
         pw.close();
+    }
+
+    public List<String> getFeatureLines(List<WordFeature> wordFeatures, String allSentence) {
+        SentenceMorphParse parse = null;
+        try {
+            parse = morphology.parseAndDisambiguateSentence(allSentence);
+        } catch (Exception e) {
+            System.out.println("Error during morphological parse of sentence:" + allSentence + " with exception:" + e.getMessage());
+        }
+
+        if (parse == null) {
+            return null;
+        }
+
+        for (int i = 0; i < wordFeatures.size(); i++) {
+            WordFeature wordFeature = wordFeatures.get(i);
+            try {
+                wordFeature.features = new TurkishChunkFeatures(wordFeature.token, parse.getEntry(i).parses.get(0));
+            } catch (Exception e) {
+                System.out.println("Error during feature extraction of sentence:" + allSentence + " with exception:" + e.getMessage());
+            }
+        }
+
+        List<String> featureLines = new ArrayList<>();
+        TurkishChunkFeatures prev;
+        TurkishChunkFeatures next;
+
+        for (int j = 0; j < wordFeatures.size(); j++) {
+            if (j > 0) {
+                prev = wordFeatures.get(j - 1).features;
+            } else {
+                prev = new WordFeature("X", TurkishChunkFeatures.START).features;
+            }
+            if (j < wordFeatures.size() - 1) {
+                next = wordFeatures.get(j + 1).features;
+            } else {
+                next = new WordFeature("X", TurkishChunkFeatures.END).features;
+            }
+            TurkishChunkFeatures current = wordFeatures.get(j).features;
+            List<String> features = current.getConnectecFeatureList(prev, next);
+            //List<String> features = current.getFeatureList();
+            String label = wordFeatures.get(j).label;
+            features.add(label);
+            featureLines.add(Joiner.on(delimiter).join(features));
+        }
+        return featureLines;
     }
 
     static Set<String> puncts = Sets.newHashSet(".", ",", "?", ":", ";", "!");
@@ -268,6 +277,7 @@ public class ChunkerFeatureExtractor {
             return wordsBlock + " [" + tag.name() + "]";
         }
     }
+
 
     public static class TurkishChunkFeatures {
         String word;

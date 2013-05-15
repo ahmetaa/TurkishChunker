@@ -16,7 +16,8 @@ public class ChunkerGui {
      */
     public static void main(String args[]) throws IOException {
 
-        final TurkishChunker chunker = new TurkishChunker(new File("src/tr/models/chunk-model-nopunct.ser"));
+        //final Chunker chunker = new TurkishChunker(new File("src/tr/models/chunk-model-nopunct.ser"));
+        final Chunker chunker = new CrfPlusPlusBasedChunker(new File("crfplusplus/cemil_model"));
 
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -33,7 +34,7 @@ public class ChunkerGui {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    new NewJFrame(chunker, true).setVisible(true);
+                    new NewJFrame(chunker, false).setVisible(true);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -45,7 +46,7 @@ public class ChunkerGui {
 
 class NewJFrame extends javax.swing.JFrame {
 
-    TurkishChunker chunker;
+    Chunker chunker;
     TurkishSentenceTokenizer tokenizer = new TurkishSentenceTokenizer();
     TurkishMorphology morphology;
     boolean eliminatePunctuations = false;
@@ -60,7 +61,7 @@ class NewJFrame extends javax.swing.JFrame {
     }
 
 
-    public NewJFrame(TurkishChunker chunker, boolean eliminatePunctuations) throws IOException {
+    public NewJFrame(Chunker chunker, boolean eliminatePunctuations) throws IOException {
         initComponents();
         this.chunker = chunker;
         this.morphology = new TurkishMorphology();

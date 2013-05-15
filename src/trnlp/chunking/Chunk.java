@@ -5,13 +5,6 @@ import zemberek3.parser.morphology.MorphParse;
 
 import java.util.List;
 
-/**
- * Created with IntelliJ IDEA.
- * User: kodlab
- * Date: 5/13/13
- * Time: 11:47 AM
- * To change this template use File | Settings | File Templates.
- */
 public class Chunk {
     int index;
     ChunkerFeatureExtractor.ChunkType type;

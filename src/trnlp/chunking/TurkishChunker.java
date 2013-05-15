@@ -5,7 +5,6 @@ import trnlp.apps.TurkishSentenceTokenizer;
 import cc.mallet.fst.CRF;
 import cc.mallet.types.ArraySequence;
 import cc.mallet.types.Instance;
-import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
 import zemberek3.parser.morphology.MorphParse;
 import zemberek3.parser.morphology.SentenceMorphParse;
@@ -17,7 +16,7 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TurkishChunker {
+public class TurkishChunker extends Chunker {
 
     CRF crf;
 
@@ -57,55 +56,11 @@ public class TurkishChunker {
     }
 
     public List<Chunk> getChunks(List<String> words, SentenceMorphParse input) {
-
         ArraySequence data = getCrfResult(input);
-
-        List<Chunk> parses = new ArrayList<>();
-        List<MorphParse> morphParses = new ArrayList<>(2);
-        int index = 0;
-        String previousTag = "X";
-        String tag="S";
-        for (int i = 0; i < data.size(); i++) {
-            String label = (String) data.get(i);
-            System.out.println(label);
-            if (label.length() != 2) {
-                System.out.println("Unexpected label:" + label);
-                index++;
-                continue;
-            }
-            tag = label.substring(0, 1);
-            boolean isBegin = label.charAt(1) == 'B';
-
-            if (i == 0) {
-                morphParses.add(input.getEntry(i).parses.get(0));
-                previousTag = tag;
-                continue;
-            }
-            if (!tag.equals(previousTag)) {
-                if (morphParses.size() > 0) {
-                    parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
-                            Lists.newArrayList(words.subList(index, index+morphParses.size()))));
-                    morphParses = new ArrayList<>(2);
-                    index = i;
-                }
-                morphParses.add(input.getEntry(i).parses.get(0));
-            } else {
-                if (isBegin) {
-                    if (morphParses.size() > 0) {
-                        parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
-                                Lists.newArrayList(words.subList(index, index+morphParses.size()))));
-                        morphParses = new ArrayList<>(2);
-                    }
-                    index = i;
-                }
-                morphParses.add(input.getEntry(i).parses.get(0));
-            }
-            previousTag = tag;
-        } if(!morphParses.isEmpty()) {
-            parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(tag), morphParses,
-                    Lists.newArrayList(words.subList(index, index+morphParses.size()))));
-        }
-        return parses;
+        List<String> labels = new ArrayList<>();
+        for (int i = 0; i < data.size(); i++)
+            labels.add((String) data.get(i));
+        return getChunks(words, labels, input);
     }
 
     private ArraySequence getCrfResult(SentenceMorphParse input) {
