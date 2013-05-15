@@ -163,7 +163,7 @@ class NewJFrame extends javax.swing.JFrame {
                     trType = "TÜMLEÇ";
                     break;
                 case VERB:
-                    trType = "FİİL";
+                    trType = "YÜKLEM";
                     break;
                 case SUBJECT:
                     trType = "ÖZNE";
