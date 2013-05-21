@@ -23,7 +23,7 @@ public class CrfPlusPlusRunner {
                 "-m",
                 modelFile.getAbsolutePath(),
                 input.getAbsolutePath());
-        
+
         List<String> result = new ArrayList<>();
         Process p = builder.start();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
