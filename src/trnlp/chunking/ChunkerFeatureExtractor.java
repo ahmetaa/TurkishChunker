@@ -1,10 +1,5 @@
 package trnlp.chunking;
 
-import org.antlr.v4.runtime.Token;
-import org.jcaki.SimpleTextWriter;
-import trnlp.apps.ContentPreprocessor;
-import trnlp.apps.TurkishMorphology;
-import trnlp.apps.TurkishSentenceTokenizer;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -12,6 +7,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.jcaki.SimpleTextReader;
 import org.jcaki.Strings;
+import trnlp.apps.ContentPreprocessor;
+import trnlp.apps.TurkishMorphology;
+import trnlp.apps.TurkishSentenceTokenizer;
 import zemberek3.parser.morphology.MorphParse;
 import zemberek3.parser.morphology.SentenceMorphParse;
 import zemberek3.shared.lexicon.SecondaryPos;
@@ -74,7 +72,6 @@ public class ChunkerFeatureExtractor {
                     if (chunkIgnored)
                         ignoredChunkSentences.add(line);
                 }
-
             }
         }
 
@@ -151,24 +148,11 @@ public class ChunkerFeatureExtractor {
         }
 
         List<String> featureLines = new ArrayList<>();
-        TurkishChunkFeatures prev;
-        TurkishChunkFeatures next;
 
-        for (int j = 0; j < wordFeatures.size(); j++) {
-            if (j > 0) {
-                prev = wordFeatures.get(j - 1).features;
-            } else {
-                prev = new WordFeature("X", TurkishChunkFeatures.START).features;
-            }
-            if (j < wordFeatures.size() - 1) {
-                next = wordFeatures.get(j + 1).features;
-            } else {
-                next = new WordFeature("X", TurkishChunkFeatures.END).features;
-            }
-            TurkishChunkFeatures current = wordFeatures.get(j).features;
-            List<String> features = current.getConnectecFeatureList(prev, next);
-            //List<String> features = current.getFeatureList();
-            String label = wordFeatures.get(j).label;
+        for (WordFeature wordFeature : wordFeatures) {
+            TurkishChunkFeatures current = wordFeature.features;
+            List<String> features = current.getFeatureList();
+            String label = wordFeature.label;
             features.add(label);
             featureLines.add(Joiner.on(delimiter).join(features));
         }
@@ -278,7 +262,6 @@ public class ChunkerFeatureExtractor {
         }
     }
 
-
     public static class TurkishChunkFeatures {
         String word;
         String lemma;
@@ -369,62 +352,15 @@ public class ChunkerFeatureExtractor {
                     String.valueOf(containsQuote)
             );
         }
-
-        public List<String> getConnectecFeatureList(TurkishChunkFeatures prev, TurkishChunkFeatures next) {
-            List<String> features = new ArrayList<>();
-            features.addAll(getFeatureList());
-            features.addAll(Arrays.asList(
-                    "-1" + prev.word, "-1" + prev.plural, "-1" + prev.nounCase, "-1" + prev.last3, "-1" + prev.lastIg, "-1" + prev.pos,
-                    "+1" + next.word, "+1" + next.plural, "+1" + next.nounCase, "-1" + prev.last3, "+1" + next.lastIg, "+1" + next.pos,
-                    pos + "|" + next.pos,
-                    prev.pos + "|" + pos,
-                    prev.lastIg + "|" + lastIg,
-                    lastIg + "|" + next.lastIg,
-                    prev.last3 + "|" + last3,
-                    last3 + "|" + next.last3,
-                    prev.plural + "|" + plural,
-                    plural + "|" + next.plural,
-                    prev.nounCase + "|" + nounCase,
-                    nounCase + "|" + next.nounCase,
-                    prev == START ? "true" : "false"
-            ));
-            return features;
-        }
-
-/*        public List<String> getConnectecFeatureList(TurkishChunkFeatures prev, TurkishChunkFeatures next) {
-            List<String> features = new ArrayList<>();
-            features.addAll(getFeatureList());
-            features.addAll(Arrays.asList(
-                    "-1" + prev.word, "-1" + prev.plural, "-1" + prev.nounCase, "-1" + prev.last3, "-1" + prev.lemma, "-1" + prev.lastIg, "-1" + prev.pos, "-1" + prev.firstLetterCapital, "-1" + prev.containsQuote,
-                    "+1" + next.word, "+1" + next.plural, "+1" + next.nounCase, "-1" + prev.last3, "+1" + next.lemma, "+1" + next.lastIg, "+1" + next.pos, "+1" + next.firstLetterCapital, "+1" + next.containsQuote,
-                    pos + "|" + next.pos,
-                    prev.pos + "|" + pos,
-                    prev.lastIg + "|" + lastIg,
-                    lastIg + "|" + next.lastIg,
-                    prev.last3 + "|" + last3,
-                    last3 + "|" + next.last3,
-                    prev.plural + "|" + plural,
-                    plural + "|" + next.plural,
-                    prev.nounCase + "|" + nounCase,
-                    nounCase + "|" + next.nounCase,
-                    prev == START ? "true" : "false",
-                    firstLetterCapital + "|" + next.firstLetterCapital,
-                    prev.firstLetterCapital + "|" + firstLetterCapital,
-                    containsQuote + "|" + next.containsQuote,
-                    prev.containsQuote + "|" + containsQuote
-            ));
-            return features;
-        }*/
     }
 
     public static void main(String[] args) throws IOException {
         ChunkerFeatureExtractor chunkerFeatureExtractor = new ChunkerFeatureExtractor(" ", true);
         chunkerFeatureExtractor.generateFromAnnotationFile(
                 new File("data/chunker-annotated.txt"),
-                new File("data/chunk-features.txt")
+                new File("data/chunk-single-features.txt")
         );
     }
-
 
 
 }
