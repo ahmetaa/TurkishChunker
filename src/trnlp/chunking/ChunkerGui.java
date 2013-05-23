@@ -1,6 +1,7 @@
 package trnlp.chunking;
 
 import com.google.common.base.Joiner;
+import trnlp.apps.CrfTemplates;
 import trnlp.apps.TurkishMorphology;
 import trnlp.apps.TurkishSentenceTokenizer;
 import zemberek3.parser.morphology.SentenceMorphParse;
@@ -16,8 +17,10 @@ public class ChunkerGui {
      */
     public static void main(String args[]) throws IOException {
 
-        //final Chunker chunker = new TurkishChunker(new File("src/tr/models/chunk-model-nopunct.ser"));
-        final Chunker chunker = new CrfPlusPlusBasedChunker(new File("crfplusplus/cemil_model"));
+        final Chunker chunker = new TurkishChunker(
+                new File("src/tr/models/chunk.ser"),
+                CrfTemplates.loadFromCrfPlusPlusTemplate(new File("crfplusplus/template_cemil"),"/"));
+        //final Chunker chunker = new CrfPlusPlusBasedChunker(new File("crfplusplus/cemil_model"));
 
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {

@@ -83,6 +83,7 @@ public class TurkishChunker extends Chunker {
         int i = 0;
         for (List<String> fullFeatures : templates.getFeatureLinesForTest(singleFeatures)) {
             featureMatrix[i] = fullFeatures.toArray(new String[fullFeatures.size()]);
+            i++;
         }
 
         Instance il = new Instance(featureMatrix, "", "", "");
