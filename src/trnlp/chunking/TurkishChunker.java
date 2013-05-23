@@ -1,5 +1,6 @@
 package trnlp.chunking;
 
+import trnlp.apps.CrfTemplates;
 import trnlp.apps.TurkishMorphology;
 import trnlp.apps.TurkishSentenceTokenizer;
 import cc.mallet.fst.CRF;
@@ -19,8 +20,9 @@ import java.util.List;
 public class TurkishChunker extends Chunker {
 
     CRF crf;
+    CrfTemplates templates;
 
-    public TurkishChunker(File model) throws IOException {
+    public TurkishChunker(File model, CrfTemplates templates) throws IOException {
         ObjectInputStream s = new ObjectInputStream(new FileInputStream(model));
         try {
             crf = (CRF) s.readObject();
@@ -28,6 +30,7 @@ public class TurkishChunker extends Chunker {
             e.printStackTrace();
         }
         s.close();
+        this.templates = templates;
     }
 
     public TurkishChunker() throws IOException {
@@ -64,20 +67,24 @@ public class TurkishChunker extends Chunker {
     }
 
     private ArraySequence getCrfResult(SentenceMorphParse input) {
-        List<ChunkerFeatureExtractor.TurkishChunkFeatures> featuresList = new ArrayList<>();
-        featuresList.add(ChunkerFeatureExtractor.TurkishChunkFeatures.START);
+        List<ChunkerAnnotationFeatureExtractor.TurkishChunkFeatures> featuresList = new ArrayList<>();
 
         for (SentenceMorphParse.Entry entry : input) {
             MorphParse first = entry.parses.get(0);
-            featuresList.add(new ChunkerFeatureExtractor.TurkishChunkFeatures(entry.input, first));
+            featuresList.add(new ChunkerAnnotationFeatureExtractor.TurkishChunkFeatures(entry.input, first));
         }
-        featuresList.add(ChunkerFeatureExtractor.TurkishChunkFeatures.END);
 
-        String[][] featureMatrix = new String[featuresList.size() - 2][];
-        for (int i = 1; i < featuresList.size() - 1; i++) {
-            List<String> connectecFeatureList = featuresList.get(i).getConnectecFeatureList(featuresList.get(i - 1), featuresList.get(i + 1));
-            featureMatrix[i - 1] = connectecFeatureList.toArray(new String[connectecFeatureList.size()]);
+        List<List<String>> singleFeatures = new ArrayList<>();
+        for (ChunkerAnnotationFeatureExtractor.TurkishChunkFeatures features : featuresList) {
+            singleFeatures.add(features.getFeatureList());
         }
+
+        String[][] featureMatrix = new String[featuresList.size()][];
+        int i = 0;
+        for (List<String> fullFeatures : templates.getFeatureLinesForTest(singleFeatures)) {
+            featureMatrix[i] = fullFeatures.toArray(new String[fullFeatures.size()]);
+        }
+
         Instance il = new Instance(featureMatrix, "", "", "");
         Instance answer = crf.transduce(il);
         return (ArraySequence) answer.getData();
@@ -108,7 +115,11 @@ public class TurkishChunker extends Chunker {
         for (SentenceMorphParse.Entry entry : disambiguated) {
             System.out.println(entry.parses);
         }
-        TurkishChunker chunker = new TurkishChunker(new File("data/chunk-model.ser"));
+        TurkishChunker chunker = new TurkishChunker(
+                new File("data/chunk-model.ser"),
+                CrfTemplates.loadFromCrfPlusPlusTemplate(
+                        new File("crfplusplus/template_cemil"), "/")
+        );
         System.out.println(chunker.getChunks(tokenList, disambiguated));
     }
 

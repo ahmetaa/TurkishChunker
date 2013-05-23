@@ -137,7 +137,7 @@ class NewJFrame extends javax.swing.JFrame {
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {
         String input = jTextField1.getText();
         if (eliminatePunctuations)
-            input = ChunkerFeatureExtractor.eliminatePunctuations(input);
+            input = ChunkerAnnotationFeatureExtractor.eliminatePunctuations(input);
 
         String tokenized = tokenizer.getTokensContentsAsString(input);
         List<String> tokenList = tokenizer.tokenizeAsStrings(input);

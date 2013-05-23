@@ -8,6 +8,7 @@ import com.google.common.collect.Sets;
 import org.jcaki.SimpleTextReader;
 import org.jcaki.Strings;
 import trnlp.apps.ContentPreprocessor;
+import trnlp.apps.CrfTemplates;
 import trnlp.apps.TurkishMorphology;
 import trnlp.apps.TurkishSentenceTokenizer;
 import zemberek3.parser.morphology.MorphParse;
@@ -19,7 +20,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
-public class ChunkerFeatureExtractor {
+/**
+ * This class is used for extracting feature data and files necessary for generating CRF models.
+ */
+public class ChunkerAnnotationFeatureExtractor {
 
     ContentPreprocessor preprocessor = new ContentPreprocessor();
     static TurkishSentenceTokenizer tokenizer = new TurkishSentenceTokenizer();
@@ -28,11 +32,11 @@ public class ChunkerFeatureExtractor {
 
     String delimiter = " ";
 
-    public ChunkerFeatureExtractor() throws IOException {
+    public ChunkerAnnotationFeatureExtractor() throws IOException {
         this.morphology = new TurkishMorphology();
     }
 
-    public ChunkerFeatureExtractor(String delimiter, boolean eliminatePunctuations) throws IOException {
+    public ChunkerAnnotationFeatureExtractor(String delimiter, boolean eliminatePunctuations) throws IOException {
         this.morphology = new TurkishMorphology();
         this.delimiter = delimiter;
         this.eliminatePunctuations = eliminatePunctuations;
@@ -114,7 +118,10 @@ public class ChunkerFeatureExtractor {
 
             List<String> featureLines = getFeatureLines(wordFeatures, allSentence);
 
-            if (featureLines == null) return;
+            if (featureLines == null) {
+                System.out.println("Problem extracting features: " + allSentence);
+                continue;
+            }
             for (String fl : featureLines) {
                 // stw.writeLine(labeledWord.word + " " + labeledWord.label);
                 pw.print(fl);
@@ -355,11 +362,16 @@ public class ChunkerFeatureExtractor {
     }
 
     public static void main(String[] args) throws IOException {
-        ChunkerFeatureExtractor chunkerFeatureExtractor = new ChunkerFeatureExtractor(" ", true);
-        chunkerFeatureExtractor.generateFromAnnotationFile(
+        ChunkerAnnotationFeatureExtractor chunkerAnnotationFeatureExtractor = new ChunkerAnnotationFeatureExtractor(" ", false);
+        chunkerAnnotationFeatureExtractor.generateFromAnnotationFile(
                 new File("data/chunker-annotated.txt"),
                 new File("data/chunk-single-features.txt")
         );
+        CrfTemplates templates = CrfTemplates.loadFromCrfPlusPlusTemplate(new File("crfplusplus/template_cemil"), "/");
+        templates.generateFullFeatures(
+                new File("data/chunk-single-features.txt"),
+                new File("data/chunk-full-features.txt"), " ");
+
     }
 
 

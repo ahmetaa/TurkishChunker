@@ -18,11 +18,7 @@ public class CrfTemplates {
 
 
     public static void main(String[] args) throws IOException {
-        CrfTemplates.loadFromCrfPlusPlusTemplate(new File("crfplusplus/template_cemil"));
-    }
-
-    public CrfTemplates(List<List<TemplateItem>> templateLists) {
-        this.templateLists = templateLists;
+        CrfTemplates.loadFromCrfPlusPlusTemplate(new File("crfplusplus/template_cemil"), "/");
     }
 
     public CrfTemplates(List<List<TemplateItem>> templateLists, String compoundFeatureDelimiter) {
@@ -37,7 +33,7 @@ public class CrfTemplates {
      * @return CrfTemplates instance.
      * @throws IOException
      */
-    public static CrfTemplates loadFromCrfPlusPlusTemplate(File templateFile) throws IOException {
+    public static CrfTemplates loadFromCrfPlusPlusTemplate(File templateFile, String compoundFeatureDelimiter) throws IOException {
         List<String> allLines = SimpleTextReader.trimmingUTF8Reader(templateFile).asStringList();
         Set<String> ids = new HashSet<>();
         List<List<TemplateItem>> result = new ArrayList<>();
@@ -54,7 +50,7 @@ public class CrfTemplates {
             List<TemplateItem> templateItems = new ArrayList<>(2);
             String templateString = Strings.subStringAfterFirst(line, ":").replaceAll("[\\[\\]%x]+", "");
             boolean noError = true;
-            for (String data : Splitter.on("/").split(templateString)) {
+            for (String data : Splitter.on(compoundFeatureDelimiter).split(templateString)) {
                 TemplateItem item = TemplateItem.get(data);
                 if (item == null) {
                     noError = false;
@@ -68,10 +64,10 @@ public class CrfTemplates {
             ids.add(id);
             result.add(templateItems);
         }
-        return new CrfTemplates(result);
+        return new CrfTemplates(result, compoundFeatureDelimiter);
     }
 
-    //
+    // This
     public List<List<SingleWordFeature>> getSingleFeatures(File singleWordFeatureFile, String featureDelimiter) throws IOException {
         List<String> all = new SimpleTextReader(singleWordFeatureFile, "utf-8").asStringList();
         List<List<SingleWordFeature>> result = new ArrayList<>();
@@ -103,7 +99,12 @@ public class CrfTemplates {
         List<String> features = new ArrayList<>();
         String label;
 
-        SingleWordFeature(List<String> tokens) {
+        public SingleWordFeature(List<String> features, String label) {
+            this.features = features;
+            this.label = label;
+        }
+
+        public SingleWordFeature(List<String> tokens) {
             this.label = tokens.get(tokens.size() - 1);
             this.features = Lists.newArrayList(tokens.subList(0, tokens.size() - 1));
         }
@@ -115,7 +116,30 @@ public class CrfTemplates {
         public String toString() {
             return asFeatureLine(" ");
         }
+    }
 
+    public List<List<String>> getFeatureLinesForTest(List<List<String>> singleFeatures) {
+        List<List<String>> result = new ArrayList<>();
+        int k = 0;
+        for (int i = 0; i < singleFeatures.size(); ++i) {
+            List<String> features = new ArrayList<>();
+            for (List<TemplateItem> templateList : templateLists) {
+                List<String> feature = new ArrayList<>();
+                for (TemplateItem templateItem : templateList) {
+                    int pos = templateItem.position + k;
+                    if (pos < 0 || pos >= singleFeatures.size()) {
+                        feature.add("_");
+                        continue;
+                    }
+                    feature.add(singleFeatures.get(pos).get(templateItem.featureIndex));
+                }
+                features.add(Joiner.on(compoundFeatureDelimiter).join(feature));
+            }
+            k++;
+            features.add("X");
+            result.add(features);
+        }
+        return result;
     }
 
     List<SingleWordFeature> getFullFeatures(List<SingleWordFeature> sentenceSingleFeatures) {
@@ -147,7 +171,13 @@ public class CrfTemplates {
         List<List<SingleWordFeature>> allSingleFeatures = getSingleFeatures(inputFile, featureDelimiter);
         int i = 0;
         for (List<SingleWordFeature> singleFeatures : allSingleFeatures) {
-            List<SingleWordFeature> fullFeature = getFullFeatures(singleFeatures);
+            List<SingleWordFeature> fullFeature = new ArrayList<>();
+            try {
+                fullFeature = getFullFeatures(singleFeatures);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Cannot generate full features for : " + singleFeatures);
+            }
             for (SingleWordFeature singleWordFeature : fullFeature) {
                 writer.writeLine(singleWordFeature.asFeatureLine(featureDelimiter));
             }

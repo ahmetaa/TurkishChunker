@@ -4,7 +4,6 @@ import com.google.common.base.Joiner;
 import org.jcaki.SimpleTextWriter;
 import org.jcaki.Strings;
 import trnlp.apps.CrfPlusPlusRunner;
-import trnlp.apps.CrfTemplates;
 import trnlp.apps.TurkishMorphology;
 import trnlp.apps.TurkishSentenceTokenizer;
 import zemberek3.parser.morphology.MorphParse;
@@ -19,11 +18,9 @@ import java.util.List;
 public class CrfPlusPlusBasedChunker extends Chunker {
 
     CrfPlusPlusRunner runner;
-    CrfTemplates templates;
 
-    public CrfPlusPlusBasedChunker(File model, File templateFile) throws IOException {
+    public CrfPlusPlusBasedChunker(File model) throws IOException {
         this.runner = new CrfPlusPlusRunner(model);
-        this.templates = CrfTemplates.loadFromCrfPlusPlusTemplate(templateFile);
     }
 
     public List<Chunk> getChunks(List<String> words, SentenceMorphParse input) {
@@ -43,18 +40,27 @@ public class CrfPlusPlusBasedChunker extends Chunker {
         return Collections.emptyList();
     }
 
+    /**
+     * Generates feature file for a single sentence. Because CRF++ model already contains the feature template
+     * information, we do not need to give full feature information. Only single word features are enough.
+     *
+     * @param input morphological parse of the input sentence.
+     * @param file  output file that will contain the feature information. This file will be passed to CRF++ process.
+     * @throws IOException
+     */
     public void createFeatureFile(SentenceMorphParse input, File file) throws IOException {
-        List<ChunkerFeatureExtractor.TurkishChunkFeatures> featuresList = new ArrayList<>();
+        List<ChunkerAnnotationFeatureExtractor.TurkishChunkFeatures> featuresList = new ArrayList<>();
 
         for (SentenceMorphParse.Entry entry : input) {
             MorphParse first = entry.parses.get(0);
-            featuresList.add(new ChunkerFeatureExtractor.TurkishChunkFeatures(entry.input, first));
+            featuresList.add(new ChunkerAnnotationFeatureExtractor.TurkishChunkFeatures(entry.input, first));
         }
+
         List<String> lines = new ArrayList<>();
-        for (int i = 0; i < featuresList.size(); i++) {
-            List<String> fullFeatures = featuresList.get(i).getFeatureList();
-            lines.add(Joiner.on("\t").join(connectecFeatureList));
+        for (ChunkerAnnotationFeatureExtractor.TurkishChunkFeatures features : featuresList) {
+            lines.add(Joiner.on("\t").join(features.getFeatureList()));
         }
+
         SimpleTextWriter.oneShotUTF8Writer(file).writeLines(lines);
     }
 
@@ -79,9 +85,7 @@ public class CrfPlusPlusBasedChunker extends Chunker {
             System.out.println(entry.parses);
         }
 
-        CrfPlusPlusBasedChunker chunker = new CrfPlusPlusBasedChunker(
-                new File("crfplusplus/cemil_model"),
-                new File("crfplusplus/template_cemil"));
+        CrfPlusPlusBasedChunker chunker = new CrfPlusPlusBasedChunker(new File("crfplusplus/cemil_model"));
         System.out.println(chunker.getChunks(tokenList, disambiguated));
     }
 }

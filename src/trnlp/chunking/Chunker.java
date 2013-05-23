@@ -33,7 +33,7 @@ public abstract class Chunker {
             }
             if (!tag.equals(previousTag)) {
                 if (morphParses.size() > 0) {
-                    parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
+                    parses.add(new Chunk(index, ChunkerAnnotationFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
                             Lists.newArrayList(words.subList(index, index + morphParses.size()))));
                     morphParses = new ArrayList<>(2);
                     index = i;
@@ -42,7 +42,7 @@ public abstract class Chunker {
             } else {
                 if (isBegin) {
                     if (morphParses.size() > 0) {
-                        parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
+                        parses.add(new Chunk(index, ChunkerAnnotationFeatureExtractor.ChunkType.getByAbbrv(previousTag), morphParses,
                                 Lists.newArrayList(words.subList(index, index + morphParses.size()))));
                         morphParses = new ArrayList<>(2);
                     }
@@ -53,7 +53,7 @@ public abstract class Chunker {
             previousTag = tag;
         }
         if (!morphParses.isEmpty()) {
-            parses.add(new Chunk(index, ChunkerFeatureExtractor.ChunkType.getByAbbrv(tag), morphParses,
+            parses.add(new Chunk(index, ChunkerAnnotationFeatureExtractor.ChunkType.getByAbbrv(tag), morphParses,
                     Lists.newArrayList(words.subList(index, index + morphParses.size()))));
         }
         return parses;

@@ -5960,9 +5960,9 @@ Babam [Özne] / bu şehrin en iyi diş doktoruymuş. [Yüklem]
 Türkiye de [Tümleç] / ruhsat [Nesne] / aldı. [Yüklem]
 henüz [Tümleç] / geri ödeme kapsamına [Tümleç] /alınmadı. [Yüklem]
 maçtan [Tümleç] /hiç [Tümleç] / kopmadık. [Yüklem]
-hep [Tümleç] / maçın içinde [Tümleç] /kaldık. [Yüklem]
+Hep [Tümleç] / maçın içinde [Tümleç] /kaldık. [Yüklem]
 Necipoğlu'nun naaşı [Özne] / perşembe günü İstanbul'da yapılacak cenaze töreninden sonra [Tümleç]/ toprağa verilecek. [Yüklem]
-siyasal tarihi [Nesne] / en az bizim kadar iyi [Tümleç] /biliyorlar. [Yüklem]
+Siyasal tarihi [Nesne] / en az bizim kadar iyi [Tümleç] /biliyorlar. [Yüklem]
 
 
 
