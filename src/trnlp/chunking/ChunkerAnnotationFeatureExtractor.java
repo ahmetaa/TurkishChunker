@@ -44,56 +44,7 @@ public class ChunkerAnnotationFeatureExtractor {
 
     public void generateFromAnnotationFile(File in, File out) throws IOException {
         PrintWriter pw = new PrintWriter(out, "utf-8");
-
-        // load all sentences
-        List<String> lines = SimpleTextReader.trimmingUTF8Reader(in).asStringList();
-
-        // eliminate duplicated sentences and give statistics
-        Set<List<ChunkData>> accepted = new LinkedHashSet<>();
-        Set<String> declined = new LinkedHashSet<>();
-        Set<String> ignoredChunkSentences = new LinkedHashSet<>();
-        for (String line : lines) {
-            line = line.replaceAll("[*]", "");
-
-            if (accepted.contains(line)) {
-                System.out.println("Duplicated line: " + line);
-            } else {
-                List<ChunkData> chunks = new ArrayList<>();
-                // split from chunks
-                boolean chunkIgnored = false;
-                for (String s : Splitter.on("/").trimResults().omitEmptyStrings().split(line)) {
-                    ChunkData chunkData = ChunkData.generate(s, eliminatePunctuations);
-                    if (chunkData == null) {
-                        System.out.println("Bad chunk detected:[" + s + "]  in sentence:" + line);
-                        chunkIgnored = true;
-                    } else
-                        chunks.add(chunkData);
-                }
-                if (chunks.isEmpty()) {
-                    declined.add(line);
-                } else {
-                    accepted.add(chunks);
-                    if (chunkIgnored)
-                        ignoredChunkSentences.add(line);
-                }
-            }
-        }
-
-
-        System.out.println("Accepted with ignored chunks");
-        for (String ignoredChunkSentence : ignoredChunkSentences) {
-            System.out.println(ignoredChunkSentence);
-        }
-        System.out.println();
-        System.out.println("Declined sentences: ");
-        for (String s : declined) {
-            System.out.println(s);
-        }
-
-        System.out.println("Total Sentence count:" + lines.size());
-        System.out.println("Accepted Line count:" + accepted.size());
-        System.out.println("Accepted with loss of chunk count:" + ignoredChunkSentences.size());
-        System.out.println("Declined Line count:" + declined.size());
+        Set<List<ChunkData>> accepted = getProperLines(in);
 
         for (List<ChunkData> chunkDataList : accepted) {
 
@@ -131,6 +82,58 @@ public class ChunkerAnnotationFeatureExtractor {
 
         }
         pw.close();
+    }
+
+    public Set<List<ChunkData>> getProperLines(File in) throws IOException {
+        // load all sentences
+        List<String> lines = SimpleTextReader.trimmingUTF8Reader(in).asStringList();
+
+        // eliminate duplicated sentences and give statistics
+        Set<List<ChunkData>> accepted = new LinkedHashSet<>();
+        Set<String> declined = new LinkedHashSet<>();
+        Set<String> ignoredChunkSentences = new LinkedHashSet<>();
+        for (String line : lines) {
+            line = line.replaceAll("[*]", "");
+
+            if (accepted.contains(line)) {
+                System.out.println("Duplicated line: " + line);
+            } else {
+                List<ChunkData> chunks = new ArrayList<>();
+                // split from chunks
+                boolean chunkIgnored = false;
+                for (String s : Splitter.on("/").trimResults().omitEmptyStrings().split(line)) {
+                    ChunkData chunkData = ChunkData.generate(s, eliminatePunctuations);
+                    if (chunkData == null) {
+                        System.out.println("Bad chunk detected:[" + s + "]  in sentence:" + line);
+                        chunkIgnored = true;
+                    } else
+                        chunks.add(chunkData);
+                }
+                if (chunks.isEmpty()) {
+                    declined.add(line);
+                } else {
+                    accepted.add(chunks);
+                    if (chunkIgnored)
+                        ignoredChunkSentences.add(line);
+                }
+            }
+        }
+
+        System.out.println("Accepted with ignored chunks");
+        for (String ignoredChunkSentence : ignoredChunkSentences) {
+            System.out.println(ignoredChunkSentence);
+        }
+        System.out.println();
+        System.out.println("Declined sentences: ");
+        for (String s : declined) {
+            System.out.println(s);
+        }
+
+        System.out.println("Total Sentence count:" + lines.size());
+        System.out.println("Accepted Line count:" + accepted.size());
+        System.out.println("Accepted with loss of chunk count:" + ignoredChunkSentences.size());
+        System.out.println("Declined Line count:" + declined.size());
+        return accepted;
     }
 
     public List<String> getFeatureLines(List<WordFeature> wordFeatures, String allSentence) {

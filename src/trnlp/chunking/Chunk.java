@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import zemberek3.parser.morphology.MorphParse;
 
 import java.util.List;
+import java.util.Locale;
 
 public class Chunk {
     int index;
@@ -36,6 +37,9 @@ public class Chunk {
             k++;
         }
         sb.append(":").append(type.name()).append("-").append(index).append("]");
+        "".toLowerCase(new Locale("tr"));
         return sb.toString();
     }
+
+
 }

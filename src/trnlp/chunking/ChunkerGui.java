@@ -1,7 +1,6 @@
 package trnlp.chunking;
 
 import com.google.common.base.Joiner;
-import trnlp.apps.CrfTemplates;
 import trnlp.apps.TurkishMorphology;
 import trnlp.apps.TurkishSentenceTokenizer;
 import zemberek3.parser.morphology.SentenceMorphParse;
@@ -17,10 +16,12 @@ public class ChunkerGui {
      */
     public static void main(String args[]) throws IOException {
 
-        final Chunker chunker = new TurkishChunker(
+
+/*        final Chunker chunker = new MalletBasedChunker(
                 new File("src/tr/models/chunk.ser"),
-                CrfTemplates.loadFromCrfPlusPlusTemplate(new File("crfplusplus/template_cemil"),"/"));
-        //final Chunker chunker = new CrfPlusPlusBasedChunker(new File("crfplusplus/cemil_model"));
+                CrfTemplates.loadFromCrfPlusPlusTemplate(new File("crfplusplus/template_cemil"),"/"));*/
+
+        final Chunker chunker = new CrfPlusPlusBasedChunker(new File("data/chunk-model-crfpp.ser"));
 
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -57,7 +58,7 @@ class NewJFrame extends javax.swing.JFrame {
     /**
      * Creates new form NewJFrame
      */
-    public NewJFrame(TurkishChunker chunker) throws IOException {
+    public NewJFrame(MalletBasedChunker chunker) throws IOException {
         initComponents();
         this.chunker = chunker;
         this.morphology = new TurkishMorphology();

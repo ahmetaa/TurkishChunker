@@ -1,5 +1,7 @@
 package trnlp.apps;
 
+import com.google.common.base.Joiner;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +24,7 @@ public class CrfPlusPlusRunner {
                 modelFile.getAbsolutePath(),
                 input.getAbsolutePath());
 
+        System.out.println(Joiner.on(" ").join(builder.command()));
         List<String> result = new ArrayList<>();
         Process p = builder.start();
         try (BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()))) {

@@ -17,12 +17,12 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TurkishChunker extends Chunker {
+public class MalletBasedChunker extends Chunker {
 
     CRF crf;
     CrfTemplates templates;
 
-    public TurkishChunker(File model, CrfTemplates templates) throws IOException {
+    public MalletBasedChunker(File model, CrfTemplates templates) throws IOException {
         ObjectInputStream s = new ObjectInputStream(new FileInputStream(model));
         try {
             crf = (CRF) s.readObject();
@@ -33,7 +33,7 @@ public class TurkishChunker extends Chunker {
         this.templates = templates;
     }
 
-    public TurkishChunker() throws IOException {
+    public MalletBasedChunker() throws IOException {
         ObjectInputStream s = new ObjectInputStream(Resources.getResource("tr/models/chunk.model").openStream());
         try {
             crf = (CRF) s.readObject();
@@ -116,7 +116,7 @@ public class TurkishChunker extends Chunker {
         for (SentenceMorphParse.Entry entry : disambiguated) {
             System.out.println(entry.parses);
         }
-        TurkishChunker chunker = new TurkishChunker(
+        MalletBasedChunker chunker = new MalletBasedChunker(
                 new File("data/chunk-model.ser"),
                 CrfTemplates.loadFromCrfPlusPlusTemplate(
                         new File("crfplusplus/template_cemil"), "/")
